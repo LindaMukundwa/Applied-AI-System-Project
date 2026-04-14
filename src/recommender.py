@@ -4,10 +4,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Song:
-    """
-    Represents a song and its attributes.
-    Required by tests/test_recommender.py
-    """
+    """Represents a single song and its audio attributes loaded from the catalog."""
     id: int
     title: str
     artist: str
@@ -21,20 +18,7 @@ class Song:
 
 @dataclass
 class UserProfile:
-    """
-    Represents a user's taste preferences.
-    Required by tests/test_recommender.py
-
-    Fields used in scoring:
-        target_energy       -- weight 0.35
-        target_acousticness -- weight 0.30
-        preferred_mood      -- weight 0.20 (binary match)
-        target_valence      -- weight 0.10
-        target_tempo        -- weight 0.05 (normalized 0–1)
-
-    Fields stored but not scored:
-        favorite_genre
-    """
+    """Holds a listener's taste preferences used as targets in the scoring recipe."""
     favorite_genre: str
     preferred_mood: str
     target_energy: float
@@ -43,20 +27,14 @@ class UserProfile:
     target_tempo: float
 
 class Recommender:
-    """
-    OOP implementation of the recommendation logic.
-    Required by tests/test_recommender.py
-    """
+    """OOP wrapper around the scoring recipe; used by the test suite."""
+
     def __init__(self, songs: List[Song]):
+        """Stores the song catalog for repeated recommendation calls."""
         self.songs = songs
 
     def _score(self, user: UserProfile, song: Song) -> Tuple[float, List[str]]:
-        """
-        Scoring recipe:
-          +2.0  genre match  (discrete bonus — genre is a stronger signal than mood)
-          +1.0  mood match   (discrete bonus)
-          +0–1  energy similarity: 1 - |song.energy - user.target_energy|
-        """
+        """Returns (score, reasons) for one song: +2.0 genre, +1.0 mood, 0–1 energy similarity."""
         score = 0.0
         reasons = []
 
@@ -75,19 +53,18 @@ class Recommender:
         return round(score, 4), reasons
 
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
+        """Scores every song in the catalog and returns the top k sorted by score."""
         scored = [(song, self._score(user, song)[0]) for song in self.songs]
         scored.sort(key=lambda x: x[1], reverse=True)
         return [song for song, _ in scored[:k]]
 
     def explain_recommendation(self, user: UserProfile, song: Song) -> str:
+        """Returns a semicolon-joined string of scoring reasons for one song."""
         _, reasons = self._score(user, song)
         return "; ".join(reasons)
 
 def load_songs(csv_path: str) -> List[Dict]:
-    """
-    Loads songs from a CSV file.
-    Required by src/main.py
-    """
+    """Reads data/songs.csv and returns a list of song dicts with typed numeric fields."""
     songs = []
     with open(csv_path, newline='', encoding='utf-8') as f:
         for row in csv.DictReader(f):
@@ -106,19 +83,7 @@ def load_songs(csv_path: str) -> List[Dict]:
     return songs
 
 def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """
-    Scores a single song against user preferences.
-    Required by recommend_songs() and src/main.py
-
-    Scoring recipe:
-      +2.0  genre match  (discrete — genre is a stronger identity signal than mood)
-      +1.0  mood match   (discrete)
-      +0–1  energy similarity: 1 - |song['energy'] - user_prefs['target_energy']|
-
-    Max possible score: 4.0 (genre + mood + perfect energy alignment).
-    The 2:1 genre-to-mood ratio reflects that genre defines listening context
-    while mood is a softer, more fluid preference.
-    """
+    """Scores one song against user preferences; returns (score, reasons) with max 4.0."""
     score = 0.0
     reasons = []
 
@@ -137,10 +102,7 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     return round(score, 4), reasons
 
 def recommend_songs(user_prefs: Dict, songs: List[Dict], k: int = 5) -> List[Tuple[Dict, float, str]]:
-    """
-    Functional implementation of the recommendation logic.
-    Required by src/main.py
-    """
+    """Scores every song, sorts by score descending, and returns the top k as (song, score, explanation) tuples."""
     scored = []
     for song in songs:
         score, reasons = score_song(user_prefs, song)
