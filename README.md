@@ -90,6 +90,12 @@ and returns the top `k` as `(song, score, explanation)` tuples.
 
 ---
 
+### Terminal Image Output
+<a><img src="terminal_output.png" alt="Terminal Output" width="800"/></a>
+
+### Stress Test with Diverse Profiles Terminal Ouput
+<a><img src="profile_recommendations.png" alt="Terminal Output" width="800"/></a>
+
 ## Getting Started
 
 ### Setup
@@ -127,143 +133,85 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+**Six listener profiles, three normal and three adversarial.**
+The system was tested against six distinct user preference dictionaries. The first
+three were realistic listener types — a daytime pop fan, a lofi study listener, and a
+rock headbanger. The final three were designed to stress-test the scoring logic:
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+- **Energy-Mood Conflict:** A user who asked for blues/sad music but set a very high
+  energy target (0.90). The only blues/sad song in the catalog is slow and quiet
+  (energy 0.38). The genre and mood bonuses still pushed it to #1 with a score of 3.48,
+  ahead of genuinely high-energy songs that scored under 1.0. The system was logically
+  correct but produced a result no real listener would want.
+
+- **Ghost Genre:** A user whose favorite genre (k-pop) does not exist in the catalog.
+  No song ever earned the genre bonus. The listener's maximum reachable score was 2.0
+  out of 4.0 — half the ceiling available to a pop or lofi listener.
+
+- **Ignored Dimensions:** A user who specified precise acousticness, valence, and tempo
+  preferences alongside a classical/peaceful profile. Autumn Sonata scored a perfect
+  4.0 — but the system never consulted any of the three extra fields. The high score
+  created a false impression of accuracy.
+
+**Weight shift experiment.**
+Genre weight was halved from +2.0 to +1.0 and energy was doubled from 0–1.0 to
+0–2.0, keeping the maximum score at 4.0. The most meaningful result: for the pop
+profile, Gym Hero (pop/intense) dropped from #2 to #4. Songs with the right mood but
+a different genre now had enough energy weight to outrank it, which felt more accurate.
+However, the adversarial energy-mood conflict case was only partially improved — Last
+Train South still ranked first, just with a narrower margin. The original weights were
+restored after the experiment.
 
 ---
 
 ## Limitations and Risks
 
-Summarize some limitations of your recommender.
+- **The genre bonus is too powerful for a 20-song catalog.** Genre is worth +2.0 —
+  half the total score — but most genres have only one song. That single song wins its
+  genre bonus automatically with no competition. This makes the genre bonus behave like
+  a hard filter rather than a scoring factor.
 
-Examples:
+- **Three user preferences are collected but never scored.** Acousticness, valence,
+  and tempo are stored in the user profile but the scoring recipe ignores all three.
+  Users who set those fields get no benefit from doing so.
 
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
+- **Energy can never penalize a song.** The energy similarity formula always produces
+  a positive number (minimum ~0.03). There is no floor of zero for a bad energy match,
+  which allows songs with the wrong vibe to slip into results purely on proximity.
 
-You will go deeper on this in your model card.
+- **The catalog encodes a stereotype.** Every low-energy song has a calm or sad mood.
+  Every high-energy song has an intense or happy mood. A listener who wants to run to
+  sad music, or study to something upbeat, cannot be served — not because of a code
+  bug, but because that combination does not exist in the data.
+
+- **No feedback loop.** The system treats every session identically. It cannot learn
+  that a user skipped the #1 result or replayed #3. Real recommenders use that signal
+  constantly.
+
+See [model_card.md](model_card.md) for a full breakdown of each bias with specific
+examples and scores.
 
 ---
 
 ## Reflection
 
-Read and complete `model_card.md`:
+[**Full Model Card**](model_card.md) | [**Profile Comparisons**](reflection.md)
 
-[**Model Card**](model_card.md)
+Building this recommender made clear that a system can follow its rules perfectly and
+still produce results that feel wrong. The scoring formula is logically consistent
+throughout but when a sad blues song ranks first for a user who asked for high-energy
+music, or when an intense pop song beats a happy indie pop song, the formula is
+answering the right question in the wrong context. The rules were designed for the
+catalog that exists, not for the full range of human musical taste.
 
-Write 1 to 2 paragraphs here about what you learned:
+The deeper lesson was about where bias lives. Every low-energy song in the catalog has
+a calm or sad mood, and every high-energy song has an intense or happy mood. That
+assumption is baked into the data labels, not into the code. AI tools like Claude were
+helpful in understanding how these decisions can impact the recommendation system as well
+as providing helpful testing as well.
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
-
----
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
-
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
-
----
-
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
-
----
-
-## 7. Evaluation
-
-How did you check your system
-
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
-
-You do not need a numeric metric, but if you used one, explain what it measures.
-
----
-
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
-
----
-
-## 9. Personal Reflection
-
-A few sentences about what you learned:
-
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
+Adjusting the weights helped at the margins reducing the genre bonus made the mood signal 
+more competitive but no weight adjustment could recommend a high-energy sad song that simply 
+is not in the catalog. The most important biases in this system are not in the algorithm. They
+are in the choices made about what data to include and how to label it, and those are
+much harder to see and fix than a number in a formula.
