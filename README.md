@@ -11,23 +11,46 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+Real-world music recommenders like Spotify and YouTube combine two main strategies: collaborative filtering, which finds patterns across millions of users to surface songs that people with similar taste enjoyed, and content-based filtering, which compares the audio attributes of songs a user already likes to find others that sound and feel similar. At scale, these platforms also layer in contextual signals like time of day, device, and activity to fine-tune what gets surfaced. This simulation focuses on content-based filtering only. It skips genre labels entirely because genre is a curatorial tag, not a felt experience and instead prioritizes the features that most directly shape how a song sounds and feels: energy level, acoustic texture, and emotional tone. The result is a scoring system that rewards closeness to a user's preferences rather than rewarding any single attribute being high or low, and a ranking step that sorts the full catalog by fit score to produce an ordered recommendation list.
 
 ---
 
 ## How The System Works
 
-Explain your design in plain language.
+### `Song` Features Used in Scoring
 
-Some prompts to answer:
+Each song carries ten attributes from `data/songs.csv`, but only five are used in the score. The other two (`genre`, `danceability`) are stored on the object but carry zero weight, because genre labels are too coarse to reflect felt similarity and danceability is largely redundant with energy.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+| Feature | Type | Role in scoring |
+|---|---|---|
+| `energy` | float 0–1 | Primary signal — weight 0.35 |
+| `acousticness` | float 0–1 | Primary signal — weight 0.30 |
+| `mood` | string | Categorical match — weight 0.20 |
+| `valence` | float 0–1 | Emotional tone support — weight 0.10 |
+| `tempo_bpm` | float (normalized) | Tiebreaker — weight 0.05 |
+| `genre` | string | Stored, not scored — weight 0.00 |
+| `danceability` | float 0–1 | Stored, not scored — weight 0.00 |
 
-You can include a simple diagram or bullet list if helpful.
+### `UserProfile` Fields
+
+The user profile stores a preference value for each scored feature — not the user's favorite songs, but the target values the scoring rule measures closeness against.
+
+| Field | Type | What it represents |
+|---|---|---|
+| `target_energy` | float 0–1 | Preferred energy level (e.g. 0.35 for chill) |
+| `target_acousticness` | float 0–1 | Preferred acoustic texture (e.g. 0.80 for raw/unplugged) |
+| `preferred_mood` | string | Mood label to match (e.g. `"chill"`) |
+| `target_valence` | float 0–1 | Preferred emotional positivity (e.g. 0.60) |
+| `target_tempo` | float (normalized) | Preferred tempo, normalized to 0–1 |
+| `favorite_genre` | string | Stored for display, not used in scoring |
+
+### How a Score Is Computed
+
+For each numeric feature, the score is `1 - |user_target - song_value|`, which gives 1.0 for a perfect match and approaches 0.0 as the gap widens. Mood uses a binary match (1 if equal, 0 if not). The five feature scores are then multiplied by their weights and summed into a single float between 0 and 1.
+
+### How Songs Are Ranked
+
+All songs in the catalog are scored against the user profile. The ranking rule sorts them by score descending and returns the top `k`. Songs with equal scores are broken by higher valence.
 
 ---
 
@@ -208,4 +231,3 @@ A few sentences about what you learned:
 - What surprised you about how your system behaved
 - How did building this change how you think about real music recommenders
 - Where do you think human judgment still matters, even if the model seems "smart"
-
