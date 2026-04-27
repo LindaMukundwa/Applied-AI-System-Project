@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 import numpy as np
 from typing import List, Dict, Tuple, Optional, Any
@@ -52,12 +53,56 @@ def build_embedder() -> Optional[Any]:
         return None
 
 
-def embed_catalog(songs: List[Dict], embedder: Any) -> List[Dict]:
-    """Pre-compute genre and mood embeddings for every song in the catalog."""
-    genres = [s["genre"] for s in songs]
-    moods = [s["mood"] for s in songs]
+def load_genre_docs(
+    genre_path: str = "data/genre_descriptions.json",
+    mood_path: str = "data/mood_descriptions.json",
+) -> Dict[str, Dict[str, str]]:
+    """Load genre and mood description documents from JSON files.
 
-    logger.info("Computing embeddings for %d songs...", len(songs))
+    Returns a dict with 'genre' and 'mood' sub-dicts mapping label → description.
+    Missing files are tolerated with a warning; the caller falls back to bare labels.
+    """
+    docs: Dict[str, Dict[str, str]] = {"genre": {}, "mood": {}}
+    for key, path in (("genre", genre_path), ("mood", mood_path)):
+        try:
+            with open(path, encoding="utf-8") as f:
+                docs[key] = json.load(f)
+            logger.info("Loaded %d %s descriptions from '%s'.", len(docs[key]), key, path)
+        except FileNotFoundError:
+            logger.warning(
+                "%s descriptions not found at '%s'. Using bare labels.", key.capitalize(), path
+            )
+    return docs
+
+
+def embed_catalog(
+    songs: List[Dict],
+    embedder: Any,
+    genre_docs: Optional[Dict[str, str]] = None,
+    mood_docs: Optional[Dict[str, str]] = None,
+) -> List[Dict]:
+    """Pre-compute genre and mood embeddings for every song in the catalog.
+
+    When genre_docs / mood_docs are provided (from load_genre_docs), each song's
+    embedding text is the full description for that label rather than the bare label.
+    This gives the model richer vocabulary to measure genre proximity — e.g. the
+    k-pop description explicitly references 'pop' and 'indie pop', improving similarity
+    scores for those pairs compared to embedding the bare word 'k-pop'.
+    """
+    genre_docs = genre_docs or {}
+    mood_docs = mood_docs or {}
+
+    genres = [genre_docs.get(s["genre"], s["genre"]) for s in songs]
+    moods = [mood_docs.get(s["mood"], s["mood"]) for s in songs]
+
+    using_docs = bool(genre_docs or mood_docs)
+    if using_docs:
+        logger.info(
+            "Computing embeddings for %d songs using enriched description documents.", len(songs)
+        )
+    else:
+        logger.info("Computing embeddings for %d songs using bare genre/mood labels.", len(songs))
+
     genre_embs = embedder.encode(genres, convert_to_numpy=True, show_progress_bar=False)
     mood_embs = embedder.encode(moods, convert_to_numpy=True, show_progress_bar=False)
 
@@ -247,18 +292,25 @@ def recommend_songs(
     songs: List[Dict],
     k: int = 5,
     embedder: Optional[Any] = None,
+    genre_docs: Optional[Dict[str, str]] = None,
+    mood_docs: Optional[Dict[str, str]] = None,
 ) -> List[Tuple[Dict, float, str]]:
     """Score every song, sort descending, return top k as (song, score, explanation) tuples.
 
-    Passes pre-computed user embeddings into score_song so the embedding model
-    is called once per recommendation request, not once per song.
+    When genre_docs / mood_docs are supplied the user profile is embedded using the
+    same description texts used for the catalog, so query and document live in the
+    same representational space and cosine similarities are meaningful.
     """
     user_embeddings = None
     if embedder is not None:
-        logger.debug("Embedding user profile for '%s'/'%s'.",
+        genre_docs = genre_docs or {}
+        mood_docs = mood_docs or {}
+        user_genre_text = genre_docs.get(user_prefs["favorite_genre"], user_prefs["favorite_genre"])
+        user_mood_text = mood_docs.get(user_prefs["preferred_mood"], user_prefs["preferred_mood"])
+        logger.debug("Embedding user profile: genre=%r, mood=%r.",
                      user_prefs["favorite_genre"], user_prefs["preferred_mood"])
-        genre_emb = embedder.encode(user_prefs["favorite_genre"], convert_to_numpy=True)
-        mood_emb = embedder.encode(user_prefs["preferred_mood"], convert_to_numpy=True)
+        genre_emb = embedder.encode(user_genre_text, convert_to_numpy=True)
+        mood_emb = embedder.encode(user_mood_text, convert_to_numpy=True)
         user_embeddings = {"genre": genre_emb, "mood": mood_emb}
 
     scored = []

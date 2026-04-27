@@ -20,7 +20,7 @@ Scoring recipe (max ~4.0 per song):
 import logging
 import sys
 
-from src.recommender import build_embedder, embed_catalog, load_songs, recommend_songs
+from src.recommender import build_embedder, embed_catalog, load_genre_docs, load_songs, recommend_songs
 
 logging.basicConfig(
     level=logging.INFO,
@@ -126,7 +126,7 @@ PROFILES = [
 ]
 
 
-def run_profile(profile: dict, songs: list, embedder) -> None:
+def run_profile(profile: dict, songs: list, embedder, docs: dict) -> None:
     """Run the recommender for one profile and print a formatted result block."""
     print()
     print("=" * 60)
@@ -141,7 +141,10 @@ def run_profile(profile: dict, songs: list, embedder) -> None:
     )
     print("-" * 60)
 
-    recommendations = recommend_songs(prefs, songs, k=5, embedder=embedder)
+    recommendations = recommend_songs(
+        prefs, songs, k=5, embedder=embedder,
+        genre_docs=docs.get("genre"), mood_docs=docs.get("mood"),
+    )
 
     for rank, (song, score, explanation) in enumerate(recommendations, start=1):
         print(f"\n  #{rank}  {song['title']}  —  {song['artist']}")
@@ -153,11 +156,15 @@ def run_profile(profile: dict, songs: list, embedder) -> None:
 
 def main() -> None:
     songs = load_songs("data/songs.csv")
+    docs: dict = {}
 
     embedder = build_embedder()
     if embedder is not None:
-        embed_catalog(songs, embedder)
-        logger.info("Semantic scoring active — genre and mood use cosine similarity.")
+        docs = load_genre_docs("data/genre_descriptions.json", "data/mood_descriptions.json")
+        embed_catalog(songs, embedder,
+                      genre_docs=docs["genre"],
+                      mood_docs=docs["mood"])
+        logger.info("Semantic scoring active — genre and mood use enriched description documents.")
     else:
         logger.warning("Semantic scoring unavailable — using exact-match fallback.")
 
@@ -169,7 +176,7 @@ def main() -> None:
     print("  Profiles 4-6  → adversarial / edge-case profiles")
 
     for profile in PROFILES:
-        run_profile(profile, songs, embedder)
+        run_profile(profile, songs, embedder, docs)
 
     print()
     print("=" * 60)

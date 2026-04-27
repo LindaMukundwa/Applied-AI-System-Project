@@ -1,0 +1,15 @@
+{
+  "happy": "Upbeat, joyful, and positive emotional tone. Energetic, celebratory, and light-hearted.",
+  "chill": "Relaxed, laid-back, and calm. Low-stress and soothing without being sleepy or sad.",
+  "intense": "High-energy, driven, and powerful. Suited for physical activity, focus, or emotional release.",
+  "focused": "Concentrated and purposeful. Steady, moderate energy that aids deep work without distraction.",
+  "moody": "Atmospheric and introspective. Neither overtly happy nor sad, with a reflective or brooding quality.",
+  "relaxed": "Calm and at ease. Slightly warmer and more social than chill. Suited for unwinding after the day.",
+  "romantic": "Warm, intimate, and emotionally tender. Evokes closeness and affection.",
+  "peaceful": "Serene and tranquil. Minimal stimulation, suited for meditation, rest, or quiet reflection.",
+  "melancholic": "Reflective and tinged with gentle sadness, but not distressing. Bittersweet and nostalgic in tone.",
+  "nostalgic": "Evokes fond memories of the past with a bittersweet, warm quality. Longing mixed with appreciation.",
+  "uplifting": "Inspiring and emotionally elevating. Often with a communal, spiritual, or triumphant quality.",
+  "angry": "Aggressive, frustrated, or confrontational emotional tone. High-intensity and cathartic.",
+  "sad": "Low-energy, sorrowful, and emotionally heavy. Expressive of grief, loss, or longing."
+}

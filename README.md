@@ -208,41 +208,109 @@ The 2:1:1 weight ratio means a perfect genre+mood match scores 3.0 before energy
 
 ---
 
+## Reliability Testing
+
+Two methods were used to verify the system works as claimed, not just appears to work.
+
+### Method 1 — Automated Unit Tests
+
+Seven tests in [tests/test_recommender.py](tests/test_recommender.py) cover both the fallback path (exact-match) and the semantic scoring path. The five new reliability tests use mock numpy vectors — no model download needed — so they run in under a second and prove the math is correct independently of the embedding model.
+
+| Test | What it proves |
+|---|---|
+| `test_recommend_returns_songs_sorted_by_score` | Sort order is correct for a pop/happy user |
+| `test_explain_recommendation_returns_non_empty_string` | Explanation strings are always produced |
+| `test_cosine_sim_identical_vectors_returns_one` | `_cosine_sim` returns 1.0 for identical vectors |
+| `test_cosine_sim_orthogonal_vectors_returns_zero` | `_cosine_sim` returns 0.0 for orthogonal vectors |
+| `test_score_song_perfect_embedding_match_scores_four` | A perfect genre + mood + energy alignment scores exactly 4.0 |
+| `test_ghost_genre_gets_partial_credit_not_zero_not_full` | A song at a 45° embedding angle earns > 0 and < 2.0 genre points |
+| `test_recommend_songs_returns_k_results_in_descending_order` | Top-k slice is always sorted highest-first |
+
+**Result: 7 out of 7 tests passed.** The AI scored correctly across all boundary conditions tested. The one known failure mode — genre+mood bonuses overriding a severe energy mismatch (Profile 4) — is not a code bug; it is a documented weight-design choice that the tests intentionally do not paper over.
+
+Run with:
+```bash
+pytest -v
+```
+
+### Method 2 — Logging and Error Handling
+
+Every key decision the system makes is written to stdout via Python's `logging` module at `INFO` level. This makes failures and fallbacks observable without reading the source code.
+
+Examples of what gets logged:
+
+```
+INFO  Loaded 20 songs from 'data/songs.csv'.
+INFO  Loading sentence-transformers model 'all-MiniLM-L6-v2'...
+INFO  Model loaded successfully.
+INFO  Computing embeddings for 20 songs...
+INFO  Catalog embeddings ready. Semantic scoring is active.
+WARNING  Could not load sentence-transformers (...). Falling back to exact-match scoring.
+WARNING  Energy value 1.30 for 'Bad Song' is out of [0, 1]; clamping.
+ERROR  Catalog file not found: data/songs.csv
+```
+
+The fallback warning in particular proves that the app never silently degrades — if semantic scoring is unavailable, a human reading the log knows immediately and can judge whether the output is still trustworthy.
+
+---
+
 ## Testing Summary
 
-### What the tests cover
-
-Two automated tests in `tests/test_recommender.py` exercise the `Recommender` class (the OOP interface used directly by the test file):
-
-- `test_recommend_returns_songs_sorted_by_score`: asserts that a pop/happy/0.80 user sees a pop, happy song at rank #1, confirming the sort order is correct.
-- `test_explain_recommendation_returns_non_empty_string`: asserts that `explain_recommendation()` returns a non-empty string.
-
-Both tests pass using the exact-match fallback path (the `Recommender` is constructed without an embedder), which confirms the fallback is functional and that the `Song` dataclass interface is intact.
+**7 / 7 automated tests passed.** The semantic scorer correctly handles perfect matches (4.0), partial matches (0 < score < 2.0), and orthogonal mismatches (0.0). The ghost-genre ceiling problem (k-pop user capped at 2.0/4.0) is resolved — semantic scoring raised the reachable score to 3.24/4.00 and surfaced genuinely relevant songs. The one remaining documented failure is Profile 4 (energy-mood conflict): genre+mood similarity still totals 3.0, enough to rank a slow blues song above every high-energy song for a user who explicitly asked for high energy. That is a weight-structure issue, not a similarity-function issue, and it is visible in both the score breakdown and the logs.
 
 ### What the adversarial profiles revealed
 
 | Profile | Finding |
 |---|---|
 | k-pop (ghost genre) | Semantic scoring raised the ceiling from 2.0 → 3.24/4.00 and surfaced genuinely relevant songs |
-| Energy-Mood Conflict | Genre+mood bonuses still dominate; a slow blues song ranks #1 for a high-energy user, the 2:1:1 weight structure is the root cause, not the similarity function |
-| Ignored Dimensions | Semantics improved genre/mood resolution but acousticness, valence, and tempo remain unscored,a perfect 4.0 is still achievable without the system ever reading those fields |
-
-### What worked
-
-- Replacing exact-match with cosine similarity directly solved the ghost-genre ceiling problem.
-- Pre-computing catalog embeddings at startup keeps the main loop fast.
-- The explanation strings (`genre similarity 0.64 (indie pop → pop) +1.27`) make partial credit auditable, a human can immediately see why a song was ranked where it was.
-- The graceful fallback means the app is robust to dependency failures.
-
-### What didn't work / known limits
-
-- The weight structure (2:1:1) can still be gamed by genre+mood alignment even when energy is badly wrong. Semantic scoring made the genre/mood signals more accurate but did not change their relative power.
-- Three user-profile fields (acousticness, valence, tempo) are still stored but never scored. The system collects information it doesn't use, which could mislead users who set those fields carefully.
-- The 20-song catalog is too small for 17 genres. Most genres have exactly one song, so the genre bonus behaves like a hard filter rather than a differentiator.
+| Energy-Mood Conflict | Genre+mood bonuses still dominate; a slow blues song ranks #1 for a high-energy user — the 2:1:1 weight structure is the root cause, not the similarity function |
+| Ignored Dimensions | Semantics improved genre/mood resolution but acousticness, valence, and tempo remain unscored — a perfect 4.0 is still achievable without the system ever reading those fields |
 
 ### What would come next
 
-Adding semantically-scored acousticness and valence (both are already stored as floats, but their labels could also be embedded), expanding the catalog to 5–10 songs per genre, and a diversity rule preventing the same genre from dominating a single recommendation list would address the three remaining weaknesses without changing the core architecture.
+Adding semantically-scored acousticness and valence, expanding the catalog to 5–10 songs per genre, and a diversity rule preventing the same genre from dominating a single recommendation list would address the three remaining weaknesses without changing the core architecture.
+
+---
+
+## Critical Reflection
+
+### What are the limitations or biases in your system?
+
+**Weight imbalance.** The 2:1:1 ratio (genre : mood : energy) means that a perfect genre and mood alignment contributes 3.0 points before energy is considered at all. A song that is wrong on energy by 0.52 units can still rank #1 if it matches genre and mood exactly — Profile 4 (energy-mood conflict) demonstrates this precisely. Semantic scoring made genre and mood signals more accurate, but did not change their relative dominance.
+
+**Catalog representation bias.** The 20-song catalog covers 17 genres, but most genres have exactly one song. A lofi fan has three songs competing for the top spots; a blues fan has one. This means the genre bonus behaves like a hard filter for most users — whoever wins the genre match wins the recommendation, with no intra-genre competition to rank by.
+
+**Three fields silently ignored.** Acousticness, valence, and tempo are collected in the user profile and stored on every song, but none of them affect the score. A user who carefully specifies they want highly acoustic music gets the same result as one who did not — and the system gives no indication that their input was unused.
+
+**Embedding model trained on general text.** `all-MiniLM-L6-v2` was not trained on music metadata. Its genre proximity scores reflect patterns in general English writing about music, not how listeners actually experience genre similarity. The model rates "hip-hop → k-pop" similarity at 0.58 and "pop → k-pop" at 0.56 — a defensible result, but one that should be treated as an approximation, not ground truth.
+
+---
+
+### Could your AI be misused, and how would you prevent that?
+
+At the scale of this classroom project the risks are low, but the patterns are worth naming.
+
+**Structural underscoring of non-Western music.** A recommender that uses genre labels from a Western-centric catalog will consistently surface lower scores for users whose preferred genres (K-pop, Afrobeats, Amapiano, Bollywood) are underrepresented or absent. Even with semantic scoring, a user whose genre sits far from the catalog's center of mass is penalized relative to one whose genre appears three times. At production scale this compounds — users who receive weaker recommendations engage less, which generates fewer training signals, which makes future models even less accurate for those users. Prevention requires catalog diversity by design, not as an afterthought.
+
+**False confidence from high scores.** A score of 3.9/4.0 looks authoritative. A user who doesn't read the explanation strings might trust that score even though it was built on only 3 of the 6 profile fields they provided. Prevention: the explanation strings already make this visible, but a more explicit warning — "Note: acousticness, valence, and tempo were not used in this score" — would be more honest.
+
+---
+
+### What surprised you while testing your AI's reliability?
+
+Two things were unexpected.
+
+First, **"hip-hop → k-pop" scored higher than "pop → k-pop"** in the sentence-transformers embedding space (0.58 vs 0.56). The intuition would be that pop is closer to k-pop than hip-hop is. But the model has apparently learned that hip-hop and k-pop share production vocabulary (trap beats, idol group framing) in a way that surfaces in English text. This is not wrong, but it was not anticipated, and it is a reminder that embedding similarity reflects corpus statistics rather than a listener's lived experience of genre.
+
+Second, **Profile 4 failed in exactly the same way after semantic scoring as it did before.** The expectation going in was that improving genre/mood similarity might soften the energy-mood conflict problem. It did not. The slow blues song still ranked #1 with a 3.48 score. Semantic scoring is not a general fix for weight imbalance — it only fixes the cases where string inequality was the barrier. Where the weights themselves are miscalibrated, a better similarity function makes no difference.
+
+---
+
+### Collaboration with Claude Code
+
+This project was built in direct conversation with Claude Code throughout. The planning phase, implementation, testing, and documentation were all developed iteratively — the human directed the goals and made the architectural decisions; Claude Code generated code, caught edge cases, and pushed back when a framing was imprecise.
+
+**One instance where the human gave genuinely useful direction:** Early in planning, the enhancement was described as "adding RAG." Claude Code flagged that what was actually being described — embed text fields, replace `==` with cosine similarity, use the user profile as the query — is not RAG in the technical sense. RAG means: embed documents, retrieve top-k, feed to an LLM for generation. None of that generation step was needed here. The human accepted that correction immediately. That single clarification prevented a significant scope expansion: no vector database, no LLM generation step, no prompt engineering — just 30 lines of numpy and a sentence-transformers model. The right label led directly to the right solution size.
 
 ---
 
@@ -260,7 +328,7 @@ Adding semantically-scored acousticness and valence (both are already stored as 
 │   ├── main.py                 # CLI runner, 6 profiles, logging, output
 │   └── recommender.py          # Core logic: loader, embedder, scorer, ranker
 ├── tests/
-│   └── test_recommender.py     # 2 pytest tests (exact-match fallback path)
+│   └── test_recommender.py     # 7 tests — fallback path + semantic reliability
 ├── model_card.md               # Detailed bias and evaluation analysis
 ├── reflection.md               # Profile comparison notes
 ├── pytest.ini                  # Sets pythonpath = . for test imports
@@ -271,11 +339,6 @@ Adding semantically-scored acousticness and valence (both are already stored as 
 
 ## Additional Documentation
 
-- [Model Card](model_card.md) : full bias analysis, evaluation methodology, and per-profile findings
-- [System Diagram](docs/system_diagram.md) : Mermaid flowchart of all components and data paths
-- [Reflection](reflection.md) : profile comparison notes
-
-
-## Reflection
-
-This is the final project of an entire course surrounding utilizing AI as a human-in-the-loop. As the capabilities of AI continue to grow, it cannot be understated how crucial learning and leveraging the skills it has to becoming a better engineer. This project has taught me important qualities similar to being a principal architect or senior software engineer. Having an understanding of the core project being built and focusing on getting a concrete plan is imperative and it was used heavily in the development in this project. In terms of problem solving, this is where our thinking and debugging cannot be replaced, by having a clear understanding of what the project is expected to do, conversations about tradeoffs become obsolete because mistakes are less prone to happen since you have a full grasp how it should operate. This is a project that makes me feel more comfortable and confident to continue in this indistry as we adopt more of these tools in our day-to-day workflow and I am excited to keep growing even more!
+- [Model Card](model_card.md) — full bias analysis, evaluation methodology, and per-profile findings
+- [System Diagram](docs/system_diagram.md) — Mermaid flowchart of all components and data paths
+- [Reflection](reflection.md) — profile comparison notes

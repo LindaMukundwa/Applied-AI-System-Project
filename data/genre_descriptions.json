@@ -1,0 +1,20 @@
+{
+  "pop": "Pop music features commercially produced, melodically catchy songs designed for mainstream appeal. Upbeat and polished production. Related to indie pop, synth-pop, K-pop, and dance-pop.",
+  "lofi": "Lo-fi hip hop uses low-fidelity production, mellow sampled beats, and ambient textures suited for studying or relaxing. Related to ambient, chill-hop, bedroom pop, and jazz.",
+  "rock": "Rock music is driven by electric guitars, strong rhythms, and amplified sound. Spans from classic rock to alternative and grunge. Related to metal, indie rock, and blues.",
+  "indie pop": "Indie pop blends pop songwriting with independent, DIY aesthetics and introspective lyrics. A softer subgenre of pop. Related to pop, alternative pop, and chamber pop.",
+  "jazz": "Jazz features improvisation, swing rhythms, and complex harmonies rooted in African-American musical traditions. Related to blues, soul, R&B, and lofi.",
+  "blues": "Blues is rooted in African-American traditions featuring expressive vocals, guitar work, and often melancholic or sorrowful themes. Related to jazz, soul, R&B, and country.",
+  "ambient": "Ambient music prioritizes texture and atmosphere over melody or rhythm, designed for background or meditative listening. Related to lofi, new age, and electronic.",
+  "synthwave": "Synthwave is an electronic genre inspired by 1980s film scores and video games, featuring synthesizers and retro aesthetics. Related to electronic, pop, and new wave.",
+  "hip-hop": "Hip-hop features rhythmic vocal delivery (rapping) over sampled or produced beats, originating in African-American culture. Related to R&B, trap, and shares production DNA with K-pop.",
+  "k-pop": "K-pop (Korean pop) combines polished pop production, synchronized choreography, and idol-group culture, drawing from Western pop, hip-hop, and electronic traditions. Related to pop, indie pop, and hip-hop.",
+  "classical": "Classical music encompasses orchestral and chamber compositions following formal structural conventions from the Western tradition. Related to ambient in its acoustic, instrumental focus.",
+  "r&b": "R&B (rhythm and blues) blends soulful, emotive vocals with contemporary production techniques. Related to blues, jazz, soul, and hip-hop.",
+  "metal": "Metal features heavily distorted guitars, aggressive rhythms, and high-intensity performance. A harder, louder subgenre of rock. Related to rock and hard rock.",
+  "folk": "Folk music emphasizes acoustic instruments, narrative storytelling, and traditional song structures passed through generations. Related to country, bluegrass, and acoustic pop.",
+  "latin": "Latin music encompasses diverse styles from Spanish-speaking cultures including salsa, reggaeton, and bossa nova, often featuring syncopated rhythms and percussion.",
+  "electronic": "Electronic music is produced primarily using synthesizers, drum machines, and digital audio tools. Covers a wide range from ambient to dance music. Related to synthwave, ambient, and pop.",
+  "country": "Country music blends folk storytelling with guitar-based instrumentation and themes of everyday life, love, and rural experience. Related to folk and Americana.",
+  "gospel": "Gospel music is expressive Christian music featuring powerful vocals and often choir arrangements, rooted in African-American church tradition. Related to R&B, soul, and blues."
+}
