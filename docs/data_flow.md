@@ -14,7 +14,7 @@ flowchart TD
     C --> R["recommend_songs(user_prefs, songs, k=5)"]
     R --> G
 
-    subgraph LOOP["Loop — score_song() called once per song"]
+    subgraph LOOP["Loop, score_song() called once per song"]
         G["Genre match?\nsong.genre == user.favorite_genre"]
         G -->|"Yes"| H["+2.0 pts"]
         G -->|"No"| I["+0.0 pts"]

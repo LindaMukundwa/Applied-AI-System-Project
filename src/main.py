@@ -1,8 +1,8 @@
 """
 Command line runner for the Music Recommender Simulation.
 
-Runs six user profiles — three "normal" taste profiles and three
-adversarial / edge-case profiles — and prints the top-5 results for each.
+Runs six user profiles, three "normal" taste profiles and three
+adversarial / edge-case profiles, and prints the top-5 results for each.
 Profiles are designed to reveal strengths and weaknesses of the scoring recipe.
 
 Scoring recipe (max ~4.0 per song):
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 PROFILES = [
     # ── NORMAL PROFILES ──────────────────────────────────────────────────────
     {
-        "label": "Profile 1 — High-Energy Pop",
+        "label": "Profile 1 : High-Energy Pop",
         "kind":  "normal",
         "note":  "Upbeat daytime listener who wants produced, happy pop.",
         "prefs": {
@@ -45,7 +45,7 @@ PROFILES = [
         },
     },
     {
-        "label": "Profile 2 — Chill Lofi Study Session",
+        "label": "Profile 2 : Chill Lofi Study Session",
         "kind":  "normal",
         "note":  "Low-energy background listener studying or working quietly.",
         "prefs": {
@@ -58,7 +58,7 @@ PROFILES = [
         },
     },
     {
-        "label": "Profile 3 — Deep Intense Rock",
+        "label": "Profile 3 : Deep Intense Rock",
         "kind":  "normal",
         "note":  "Headbanger who wants hard, driven rock at high tempo.",
         "prefs": {
@@ -73,7 +73,7 @@ PROFILES = [
 
     # ── ADVERSARIAL / EDGE-CASE PROFILES ─────────────────────────────────────
     {
-        "label": "Profile 4 — Energy-Mood Conflict  [ADVERSARIAL]",
+        "label": "Profile 4 : Energy-Mood Conflict  [ADVERSARIAL]",
         "kind":  "adversarial",
         "note":  (
             "A user who wants HIGH energy (0.90) but describes their mood as 'sad'. "
@@ -90,7 +90,7 @@ PROFILES = [
         },
     },
     {
-        "label": "Profile 5 — Ghost Genre (k-pop)  [ADVERSARIAL]",
+        "label": "Profile 5 : Ghost Genre (k-pop)  [ADVERSARIAL]",
         "kind":  "adversarial",
         "note":  (
             "A user whose favorite_genre ('k-pop') does not exist in the catalog. "
@@ -107,11 +107,11 @@ PROFILES = [
         },
     },
     {
-        "label": "Profile 6 — Ignored Dimensions (acoustic classical)  [ADVERSARIAL]",
+        "label": "Profile 6 : Ignored Dimensions (acoustic classical)  [ADVERSARIAL]",
         "kind":  "adversarial",
         "note":  (
             "A user with very specific acousticness, valence, and tempo preferences. "
-            "Those fields do not affect the score — only genre, mood, and energy do. "
+            "Those fields do not affect the score, only genre, mood, and energy do. "
             "Semantic scoring improves genre/mood resolution but cannot fix missing fields."
         ),
         "prefs": {
