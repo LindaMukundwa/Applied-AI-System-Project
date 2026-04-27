@@ -3,9 +3,12 @@
 The original project was a music recommender simulation from Module 4 which acted like a small music recommender system similar to applications like Spotify. It mirrored real world AI recommenders and represented songs and a user "taste profile" as data, along with other features.
 
 [Demo on Hugging Face](https://huggingface.co/spaces/linda14/Music-Recommender )
+
 [Video Walkthrough](https://youtu.be/KY2S7lffhN4)
+
 [Presentation](https://canva.link/ifhjo9unf6e81yy)
----
+
+-
 ---
 title: Music Recommender Simulation
 emoji: 🎵
