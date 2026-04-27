@@ -8,8 +8,9 @@ The original project was a music recommender simulation from Module 4 which acte
 
 [Presentation](https://canva.link/ifhjo9unf6e81yy)
 
--
----
+
+<details>
+<summary>Important Requirements</summary>
 title: Music Recommender Simulation
 emoji: 🎵
 colorFrom: purple
@@ -18,8 +19,8 @@ sdk: streamlit
 sdk_version: "1.41.0"
 app_file: app.py
 pinned: false
----
 
+</details>
 
 ### Terminal Image Output
 <a><img src="/assets/Output.png" alt="Terminal Output" width="600"/></a>
