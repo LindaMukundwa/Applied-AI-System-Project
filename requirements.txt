@@ -1,6 +1,6 @@
 sentence-transformers>=3.0.0,<4.0.0
 torch>=2.0.0,<3.0.0
 numpy>=1.24.0
-pandas
-pytest
-streamlit
+pandas>=1.5.0
+streamlit>=1.41.0
+pytest>=7.0.0

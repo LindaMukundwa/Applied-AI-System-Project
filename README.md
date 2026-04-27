@@ -1,3 +1,14 @@
+---
+title: Music Recommender Simulation
+emoji: 🎵
+colorFrom: purple
+colorTo: blue
+sdk: streamlit
+sdk_version: "1.41.0"
+app_file: app.py
+pinned: false
+---
+
 # Music Recommender with Semantic Scoring
 
 The original project was a music recommender simulation from Module 4 which acted like a small music recommender system similar to applications like Spotify. It mirrored real world AI recommenders and represented songs and a user "taste profile" as data, along with other features.
