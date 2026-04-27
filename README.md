@@ -106,18 +106,26 @@ and returns the top `k` as `(song, score, explanation)` tuples.
    python -m venv .venv
    source .venv/bin/activate      # Mac or Linux
    .venv\Scripts\activate         # Windows
+   ```
 
-2. Install dependencies
+2. Install dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+   > **Note:** `sentence-transformers` is included. On first run the system
+   > automatically downloads the `all-MiniLM-L6-v2` model (~80 MB) from
+   > HuggingFace. An internet connection is required for that first run only;
+   > subsequent runs use the locally cached model. If the download fails,
+   > the recommender logs a warning and falls back to exact-match scoring
+   > so the app still runs correctly.
 
 3. Run the app:
 
-```bash
-python -m src.main
-```
+   ```bash
+   python -m src.main
+   ```
 
 ### Running Tests
 
