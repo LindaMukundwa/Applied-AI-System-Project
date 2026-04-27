@@ -1,3 +1,10 @@
+# Music Recommender with Semantic Scoring
+
+The original project was a music recommender simulation from Module 4 which acted like a small music recommender system similar to applications like Spotify. It mirrored real world AI recommenders and represented songs and a user "taste profile" as data, along with other features.
+
+[Demo on Hugging Face](https://huggingface.co/spaces/linda14/Music-Recommender )
+[Video Walkthrough](https://youtu.be/KY2S7lffhN4)
+[Presentation](https://canva.link/ifhjo9unf6e81yy)
 ---
 title: Music Recommender Simulation
 emoji: 🎵
@@ -9,18 +16,16 @@ app_file: app.py
 pinned: false
 ---
 
-# Music Recommender with Semantic Scoring
-
-The original project was a music recommender simulation from Module 4 which acted like a small music recommender system similar to applications like Spotify. It mirrored real world AI recommenders and represented songs and a user "taste profile" as data, along with other features.
 
 ### Terminal Image Output
-<a><img src="/assets/Output.png" alt="Terminal Output" width="800"/></a>
+<a><img src="/assets/Output.png" alt="Terminal Output" width="600"/></a>
 
 ## Title and Summary
 
 This project is a content-based music recommender that uses semantic similarity to match songs to a user's taste profile. Instead of asking whether a user's genre preference is an exact string match to a catalog entry, it embeds both the user's preference and every song's genre and mood into a shared vector space using the `all-MiniLM-L6-v2` sentence-transformers model, then scores by cosine similarity.
 
 **Why it matters:** The original system silently failed anyone whose preferred genre didn't appear word-for-word in the catalog, a k-pop fan reached a maximum score of 2.0/4.0 while a pop fan could reach 4.0, purely because of string inequality. Semantic scoring closes that gap by giving partial credit when genres are meaningfully related, and it makes the scoring logic honest about what it can and cannot do.
+
 
 ---
 
