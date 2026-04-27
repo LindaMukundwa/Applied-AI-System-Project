@@ -6,6 +6,7 @@ The original project was a music recommender simulation from Module 4 which acte
 [Video Walkthrough](https://youtu.be/KY2S7lffhN4)
 [Presentation](https://canva.link/ifhjo9unf6e81yy)
 ---
+---
 title: Music Recommender Simulation
 emoji: 🎵
 colorFrom: purple
